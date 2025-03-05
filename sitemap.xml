@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://physics.bu.edu/~alxndr/</loc>
+    <lastmod>2024-09-30T00:09:01-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/fuzzing-tricks/</loc>
+    <lastmod>2024-09-30T00:09:01-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/post/</loc>
+    <lastmod>2024-09-30T00:09:01-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/libfuzzer-forkserver/</loc>
+    <lastmod>2020-05-23T00:09:01-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/qemu-fuzzing/</loc>
+    <lastmod>2019-05-06T00:09:01-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/wcpwn/</loc>
+    <lastmod>2018-01-09T12:44:31-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/about/</loc>
+    <lastmod>2018-01-03T16:38:55-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/work/</loc>
+    <lastmod>2018-01-03T16:38:55-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/pwmxvga2/</loc>
+    <lastmod>2016-04-03T14:01:56-05:00</lastmod>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/categories/</loc>
+  </url><url>
+    <loc>https://physics.bu.edu/~alxndr/tags/</loc>
+  </url>
+</urlset>

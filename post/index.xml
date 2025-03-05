@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on alxndr</title>
+    <link>https://physics.bu.edu/~alxndr/post/</link>
+    <description>Recent content in Posts on alxndr</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 30 Sep 2024 00:09:01 -0500</lastBuildDate>
+    <atom:link href="https://physics.bu.edu/~alxndr/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Fuzzing Tips and Tricks</title>
+      <link>https://physics.bu.edu/~alxndr/fuzzing-tricks/</link>
+      <pubDate>Mon, 30 Sep 2024 00:09:01 -0500</pubDate>
+      <guid>https://physics.bu.edu/~alxndr/fuzzing-tricks/</guid>
+      <description>Here are some tricks that can help with fuzzing&#xA;OSS-Fuzz Corpus Backups Want to test your fuzzer with the corpus collected on OSS-Fuzz? Use this URL scheme:&#xA;https://storage.googleapis.com/PROJECTNAME-backup.clusterfuzz-external.appspot.com/ corpus/libFuzzer/PROJECTNAME_TARGETNAME/public.zip For example, for the &amp;ldquo;bpf-object-fuzzer&amp;rdquo; target for the &amp;ldquo;libbpf&amp;rdquo; project: https://storage.googleapis.com/libbpf-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/libbpf_bpf-object-fuzzer/public.zip&#xA;Progressive Timeouts Sometimes, our target quickly runs into slow inputs which bog down performance. For example, if part of the input is treated as the size of a copy operation, a few inputs with large copy sizes will waste most of the fuzzing time.</description>
+    </item>
+    <item>
+      <title>Using libfuzzer with a fork-server</title>
+      <link>https://physics.bu.edu/~alxndr/libfuzzer-forkserver/</link>
+      <pubDate>Sat, 23 May 2020 00:09:01 -0500</pubDate>
+      <guid>https://physics.bu.edu/~alxndr/libfuzzer-forkserver/</guid>
+      <description>Forking is a powerful approach for ensuring that state does not leak between fuzzer runs. Using fork(2), we tell the OS to create a disposable duplicate of the calling process, which we can tear down after each input. This fork-server &amp;ldquo;approach&amp;rdquo; has been popularized by AFL1. Though libfuzzer2 has an experimental -fork flag, it provides a way to continue fuzzing, after finding a crash, rather than resetting state after each fuzzing input.</description>
+    </item>
+    <item>
+      <title>Fuzzing QEMU VirtIO Devices: Intro</title>
+      <link>https://physics.bu.edu/~alxndr/qemu-fuzzing/</link>
+      <pubDate>Mon, 06 May 2019 00:09:01 -0500</pubDate>
+      <guid>https://physics.bu.edu/~alxndr/qemu-fuzzing/</guid>
+      <description>This summer, I will be contributing to QEMU with funding support from Google Summer of Code 2019. I will be mentored by Bandan Das and Stefan Hajnoczi. I am excited to contribute to one of the most influential open-source projects!&#xA;In short, the goal of my work is to develop extensions that will enable efficient fuzzing of QEMU device implementations. I will be focusing primarily on VirtIO devices, due to their popularity and well-defined specification.</description>
+    </item>
+    <item>
+      <title>Remote Code Execution in Netgear WLAN Controllers</title>
+      <link>https://physics.bu.edu/~alxndr/wcpwn/</link>
+      <pubDate>Tue, 09 Jan 2018 12:44:31 -0500</pubDate>
+      <guid>https://physics.bu.edu/~alxndr/wcpwn/</guid>
+      <description>Your browser does not support the video tag. ## description While working on a static analysis toolkit for firmware images, our team discovered a remote code execution vulnerability on several Netgear Wireless Controller Devices. These devices provide a configuration interface via HTTP. One of the scripts in the webserver root is a &#34;request_handler.php&#34; which passes unsanitized POST variables into a [system()](http://php.net/manual/en/function.system.php) call. So far we confirmed that NETGEAR WC7500, WC7600, WC7620, WC9500 and WMS5316 devices contain the vulnerable code.</description>
+    </item>
+    <item>
+      <title>Can we PWM VGA to achieve higher color depth?</title>
+      <link>https://physics.bu.edu/~alxndr/pwmxvga2/</link>
+      <pubDate>Sun, 03 Apr 2016 14:01:56 -0500</pubDate>
+      <guid>https://physics.bu.edu/~alxndr/pwmxvga2/</guid>
+      <description>synopsis Probably Not&#xA;intro One of the first projects in many FPGA guides involves displaying an image on a screen. This was also one of the first things I tried when I got my hands on a Basys 2 board. There are some interesting design decisions that went into the VGA specification that clearly indicate that it was designed for analog hardware. After drawing a few red, green and blue rectangles on the screen, I began mixing these colors.</description>
+    </item>
+  </channel>
+</rss>

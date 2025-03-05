@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="generator" content="Hugo 0.26" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>alxndr</title>
+        <style>
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RBI.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
+body{
+    line-height:1.6;
+    max-width:700px;
+    padding-left:10px;
+	margin: auto;
+	font-family: 'Verdana'
+}
+h1,h2,h3,h4{
+    line-height:1;
+    font-size: 1.2em;
+    
+    
+}
+h1{
+    line-height:1;
+    font-size: 1.2em;
+    color: #535F6D;
+    text-align: left;
+}
+a {
+    color: #0089ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,137,255,.3); -webkit-transition: color .1s ease,border-color .1s ease;
+    transition: color .1s ease,border-color .1s ease;
+}
+a:hover {
+    color: #f41224 !important;
+    border-color: rgba(244,18,36,.3) !important;
+}
+a:visited{
+ 
+}
+.navcell{
+	padding-top:20px;
+    padding-right:20px;
+}
+.postdate{
+    padding-right:20px;
+}
+.postlink{
+    padding-right:20px;
+}
+.wrappedimg{
+    margin:10px;
+}
+
+.wiggly {
+    font-weight: bold;
+    display: inline-block;
+}
+
+        </style>
+    </head>
+    <body>
+        
+        <table style="margin-left:auto; margin-right:auto">
+            <tr>
+                <td class=navcell><a href=https://physics.bu.edu/~alxndr/>home</a></td>
+            </tr>
+        </table>
+        
+
+
+<style>
+video, img{
+    float: right;
+    width: 30%;
+}
+</style>
+
+<h3><a href=https://physics.bu.edu/~alxndr/fuzzing-tricks/>Fuzzing Tips and Tricks</a></h3>
+
+
+Here are some tricks that can help with fuzzing
+OSS-Fuzz Corpus Backups Want to test your fuzzer with the corpus collected on OSS-Fuzz? Use this URL scheme:
+https://storage.googleapis.com/PROJECTNAME-backup.clusterfuzz-external.appspot.com/ corpus/libFuzzer/PROJECTNAME_TARGETNAME/public.zip For example, for the &ldquo;bpf-object-fuzzer&rdquo; target for the &ldquo;libbpf&rdquo; project: https://storage.googleapis.com/libbpf-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/libbpf_bpf-object-fuzzer/public.zip
+Progressive Timeouts Sometimes, our target quickly runs into slow inputs which bog down performance. For example, if part of the input is treated as the size of a copy operation, a few inputs with large copy sizes will waste most of the fuzzing time.
+<br>
+<a href=https://physics.bu.edu/~alxndr/fuzzing-tricks/>Continue reading &rarr;</a>
+
+<h3><a href=https://physics.bu.edu/~alxndr/libfuzzer-forkserver/>Using libfuzzer with a fork-server</a></h3>
+
+
+<img src="https://physics.bu.edu/~alxndr/libfuzzer-forkserver/qemu-logo.svg">
+
+Forking is a powerful approach for ensuring that state does not leak between fuzzer runs. Using fork(2), we tell the OS to create a disposable duplicate of the calling process, which we can tear down after each input. This fork-server &ldquo;approach&rdquo; has been popularized by AFL1. Though libfuzzer2 has an experimental -fork flag, it provides a way to continue fuzzing, after finding a crash, rather than resetting state after each fuzzing input.
+<br>
+<a href=https://physics.bu.edu/~alxndr/libfuzzer-forkserver/>Continue reading &rarr;</a>
+
+<h3><a href=https://physics.bu.edu/~alxndr/qemu-fuzzing/>Fuzzing QEMU VirtIO Devices: Intro</a></h3>
+
+
+<img src="https://physics.bu.edu/~alxndr/qemu-fuzzing/qemu-logo.svg">
+
+This summer, I will be contributing to QEMU with funding support from Google Summer of Code 2019. I will be mentored by Bandan Das and Stefan Hajnoczi. I am excited to contribute to one of the most influential open-source projects!
+In short, the goal of my work is to develop extensions that will enable efficient fuzzing of QEMU device implementations. I will be focusing primarily on VirtIO devices, due to their popularity and well-defined specification.
+<br>
+<a href=https://physics.bu.edu/~alxndr/qemu-fuzzing/>Continue reading &rarr;</a>
+
+<h3><a href=https://physics.bu.edu/~alxndr/wcpwn/>Remote Code Execution in Netgear WLAN Controllers</a></h3>
+
+<video controls>
+    <source src="https://physics.bu.edu/~alxndr/wcpwn/wc7520.webm" type="video/mp4">
+</video>
+
+
+Your browser does not support the video tag. ## description While working on a static analysis toolkit for firmware images, our team discovered a remote code execution vulnerability on several Netgear Wireless Controller Devices. These devices provide a configuration interface via HTTP. One of the scripts in the webserver root is a "request_handler.php" which passes unsanitized POST variables into a [system()](http://php.net/manual/en/function.system.php) call. So far we confirmed that NETGEAR WC7500, WC7600, WC7620, WC9500 and WMS5316 devices contain the vulnerable code.
+<br>
+<a href=https://physics.bu.edu/~alxndr/wcpwn/>Continue reading &rarr;</a>
+
+<h3><a href=https://physics.bu.edu/~alxndr/pwmxvga2/>Can we PWM VGA to achieve higher color depth?</a></h3>
+
+
+<img src="https://physics.bu.edu/~alxndr/pwmxvga2/crt2.jpg">
+
+synopsis Probably Not
+intro One of the first projects in many FPGA guides involves displaying an image on a screen. This was also one of the first things I tried when I got my hands on a Basys 2 board. There are some interesting design decisions that went into the VGA specification that clearly indicate that it was designed for analog hardware. After drawing a few red, green and blue rectangles on the screen, I began mixing these colors.
+<br>
+<a href=https://physics.bu.edu/~alxndr/pwmxvga2/>Continue reading &rarr;</a>
+
+
+    </body>
+</html>
+
+

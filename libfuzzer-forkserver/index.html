@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="generator" content="Hugo 0.26" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>alxndr</title>
+        <style>
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RBI.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
+body{
+    line-height:1.6;
+    max-width:700px;
+    padding-left:10px;
+	margin: auto;
+	font-family: 'Verdana'
+}
+h1,h2,h3,h4{
+    line-height:1;
+    font-size: 1.2em;
+    
+    
+}
+h1{
+    line-height:1;
+    font-size: 1.2em;
+    color: #535F6D;
+    text-align: left;
+}
+a {
+    color: #0089ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,137,255,.3); -webkit-transition: color .1s ease,border-color .1s ease;
+    transition: color .1s ease,border-color .1s ease;
+}
+a:hover {
+    color: #f41224 !important;
+    border-color: rgba(244,18,36,.3) !important;
+}
+a:visited{
+ 
+}
+.navcell{
+	padding-top:20px;
+    padding-right:20px;
+}
+.postdate{
+    padding-right:20px;
+}
+.postlink{
+    padding-right:20px;
+}
+.wrappedimg{
+    margin:10px;
+}
+
+.wiggly {
+    font-weight: bold;
+    display: inline-block;
+}
+
+        </style>
+    </head>
+    <body>
+        
+        <table style="margin-left:auto; margin-right:auto">
+            <tr>
+                <td class=navcell><a href=https://physics.bu.edu/~alxndr/>home</a></td>
+            </tr>
+        </table>
+        
+
+
+
+<h1>Using libfuzzer with a fork-server</h1>
+
+<p>Forking is a powerful approach for ensuring that state does not leak between
+fuzzer runs. Using fork(2), we tell the OS to create a disposable duplicate of
+the calling process, which we can tear down after each input.
+This fork-server &ldquo;approach&rdquo; has been popularized by AFL<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>. Though
+libfuzzer<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> has an experimental -fork flag, it provides a way to continue
+fuzzing, after finding a crash, rather than resetting state after <em>each</em> fuzzing
+input.
+Here is my way for achieving &ldquo;forkserver&rdquo; functionality with libfuzzer<sup id="fnref1:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.
+A standard libfuzzer target looks something like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">int</span> <span style="color:#00a000">LLVMFuzzerTestOneInput</span>(<span style="color:#a2f;font-weight:bold">const</span> <span style="color:#0b0;font-weight:bold">uint8_t</span> <span style="color:#666">*</span>Data, <span style="color:#0b0;font-weight:bold">size_t</span> Size) {
+</span></span><span style="display:flex;"><span>    <span style="color:#080;font-style:italic">// Do something with Data[]
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"></span>}
+</span></span></code></pre></div><p>Adding a fork-server, the code becomes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">int</span> <span style="color:#00a000">LLVMFuzzerTestOneInput</span>(<span style="color:#a2f;font-weight:bold">const</span> uint8<span style="">\</span>_t <span style="color:#666">*</span>Data, <span style="color:#0b0;font-weight:bold">size_t</span> Size) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">if</span> (<span style="color:#00a000">fork</span>() <span style="color:#666">==</span> <span style="color:#666">0</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">// Do something with Data[]
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">/* 
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">        * From https://llvm.org/docs/LibFuzzer.html:
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">        * &#34;fuzz targets ... must not exit() on any input&#34;, so use _Exit
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">        * on the forked process without triggering libfuzzer&#39;s exit(3) hook.
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">        */</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00a000">_Exit</span>(<span style="color:#666">0</span>);
+</span></span><span style="display:flex;"><span>    } <span style="color:#a2f;font-weight:bold">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">// Wait for the forked process to finish exiting the input, and exit.
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"></span>        <span style="color:#00a000">wait</span>(<span style="color:#a2f">NULL</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We&rsquo;re not quite done yet. This ensures that no state leaks from the child to the
+parent. But we <em>do</em> actually want some state to reach the parent: the coverage
+data that libfuzzer uses to evaluate the input&rsquo;s novelty and guide mutations.
+This needs to be <em>shared</em> between the child and the parent, and what better way
+to do this, than with shared memory?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;stdlib.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;stdio.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;string.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;unistd.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;stdint.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;fcntl.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;sys/types.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;sys/wait.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;sys/mman.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080">#include</span> <span style="color:#080">&lt;sys/stat.h&gt;</span><span style="color:#080">
+</span></span></span><span style="display:flex;"><span><span style="color:#080"></span>
+</span></span><span style="display:flex;"><span><span style="color:#a2f;font-weight:bold">extern</span> <span style="color:#0b0;font-weight:bold">uint8_t</span> __FUZZ_COUNTERS_START;
+</span></span><span style="display:flex;"><span><span style="color:#a2f;font-weight:bold">extern</span> <span style="color:#0b0;font-weight:bold">uint8_t</span> __FUZZ_COUNTERS_END;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">void</span> <span style="color:#00a000">counter_shm_init</span>(<span style="color:#0b0;font-weight:bold">void</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#080;font-style:italic">/* Copy what&#39;s in the counter region to a temporary buffer.. */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#0b0;font-weight:bold">void</span> <span style="color:#666">*</span>copy <span style="color:#666">=</span> <span style="color:#00a000">malloc</span>(<span style="color:#666">&amp;</span>__FUZZ_COUNTERS_END <span style="color:#666">-</span> <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START);
+</span></span><span style="display:flex;"><span>    <span style="color:#00a000">memcpy</span>(copy,
+</span></span><span style="display:flex;"><span>           <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START,
+</span></span><span style="display:flex;"><span>           <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_END <span style="color:#666">-</span> <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#080;font-style:italic">/* Map a shared region over the counter region */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">if</span> (<span style="color:#00a000">mmap</span>(<span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START,
+</span></span><span style="display:flex;"><span>             <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_END <span style="color:#666">-</span> <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START,
+</span></span><span style="display:flex;"><span>             PROT_READ <span style="color:#666">|</span> PROT_WRITE, MAP_SHARED <span style="color:#666">|</span> MAP_FIXED <span style="color:#666">|</span> MAP_ANONYMOUS,
+</span></span><span style="display:flex;"><span>             <span style="color:#666">0</span>, <span style="color:#666">0</span>) <span style="color:#666">==</span> MAP_FAILED) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00a000">perror</span>(<span style="color:#b44">&#34;Error: &#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00a000">exit</span>(<span style="color:#666">1</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#080;font-style:italic">/* Copy the original data back to the counter-region */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00a000">memcpy</span>(<span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START, copy,
+</span></span><span style="display:flex;"><span>           <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_END <span style="color:#666">-</span> <span style="color:#666">&amp;</span>__FUZZ_COUNTERS_START);
+</span></span><span style="display:flex;"><span>    <span style="color:#00a000">free</span>(copy);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">int</span> <span style="color:#00a000">LLVMFuzzerTestOneInput</span>(<span style="color:#a2f;font-weight:bold">const</span> <span style="color:#0b0;font-weight:bold">uint8_t</span> <span style="color:#666">*</span>Data, <span style="color:#0b0;font-weight:bold">size_t</span> Size)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">static</span> <span style="color:#0b0;font-weight:bold">int</span> shm_initialized;
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">if</span>( <span style="color:#666">!</span>shm_initialized<span style="color:#666">++</span> )
+</span></span><span style="display:flex;"><span>        <span style="color:#00a000">counter_shm_init</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">if</span> (<span style="color:#00a000">fork</span>() <span style="color:#666">==</span> <span style="color:#666">0</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">/* Do something with Data[] */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">/* 
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">         * From https://llvm.org/docs/LibFuzzer.html:
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">         * &#34;fuzz targets ... must not exit() on any input&#34;, so use _Exit
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">         * on the forked process without triggering libfuzzer&#39;s exit(3) hook.
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">         */</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00a000">_Exit</span>(<span style="color:#666">0</span>);
+</span></span><span style="display:flex;"><span>    } <span style="color:#a2f;font-weight:bold">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#080;font-style:italic">// Wait for the forked process to finish exiting the input, and exit.
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"></span>        <span style="color:#00a000">wait</span>(<span style="color:#a2f">NULL</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a2f;font-weight:bold">return</span> <span style="color:#666">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>One more order of business left: the code above implies that
+<code>__FUZZ_COUNTERS_{START,END}</code> encompass the libfuzzer coverage regions, but
+right now the code doesn&rsquo;t even compile because the linker can&rsquo;t resolve these
+symbols:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ clang-11 test.c -o <span style="color:#a2f">test</span> -fsanitize<span style="color:#666">=</span>fuzzer
+</span></span><span style="display:flex;"><span>/usr/bin/ld: /tmp/t-97c18c.o: in <span style="color:#a2f;font-weight:bold">function</span> <span style="color:#b44">`</span>counter_shm_init<span style="color:#b44">&#39;:
+</span></span></span><span style="display:flex;"><span><span style="color:#b44">test.c:(.text.counter_shm_init[counter_shm_init]+0x96): undefined reference to `__FUZZ_COUNTERS_START&#39;</span>
+</span></span><span style="display:flex;"><span>/usr/bin/ld: test.c:<span style="color:#666">(</span>.text.counter_shm_init<span style="color:#666">[</span>counter_shm_init<span style="color:#666">]</span>+0xa0<span style="color:#666">)</span>: undefined reference to <span style="color:#b44">`</span>__FUZZ_COUNTERS_END<span style="color:#b44">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#b44">/usr/bin/ld: test.c:(.text.counter_shm_init[counter_shm_init]+0xf8): undefined reference to `__FUZZ_COUNTERS_START&#39;</span>
+</span></span></code></pre></div><p>How do we define these symbols <em>and</em> ensure that they encompass the libfuzzer
+counters? We use a linker-script <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#080;font-style:italic">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> * Place all of the stuff that needs to persist across fuzzing runs into
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> * a contiguous section of memory. Then, it is easy to re-map the
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> * counter-related memory as shared.
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SECTIONS
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  .data.<span style="color:#a0a000">fuzz_start</span> : <span style="color:#00a000">ALIGN</span>(<span style="color:#666">4</span>K)
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>      __FUZZ_COUNTERS_START <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      __start___sancov_cntrs <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>      <span style="color:#666">*</span>(_<span style="color:#666">*</span>sancov_cntrs);
+</span></span><span style="display:flex;"><span>      __stop___sancov_cntrs <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#080;font-style:italic">/* Lowest stack counter */</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#666">*</span>(__sancov_lowest_stack);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  .data.<span style="color:#a0a000">fuzz_ordered</span> :
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>      __start___libfuzzer_extra_counters <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>      <span style="color:#666">*</span>(__libfuzzer_extra.<span style="color:#666">*</span>);
+</span></span><span style="display:flex;"><span>      __stop___libfuzzer_extra_counters <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#080;font-style:italic">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       * Coverage counters. They&#39;re not necessary for fuzzing, but are useful
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       * for analyzing the fuzzing performance
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       */</span>
+</span></span><span style="display:flex;"><span>      __start___llvm_prf_cnts <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>      <span style="color:#666">*</span>(<span style="color:#666">*</span>llvm_prf_cnts);
+</span></span><span style="display:flex;"><span>      __stop___llvm_prf_cnts <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#080;font-style:italic">/* Internal Libfuzzer TracePC object which contains the ValueProfileMap */</span>
+</span></span><span style="display:flex;"><span>      FuzzerTracePC<span style="color:#666">*</span>(.bss<span style="color:#666">*</span>);
+</span></span><span style="display:flex;"><span>      <span style="color:#080;font-style:italic">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       * In case the above line fails, explicitly specify the (mangled) name of
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       * the object we care about
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">       */</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#666">*</span>(.bss._ZN6fuzzer3TPCE);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  .data.<span style="color:#a0a000">fuzz_end</span> : <span style="color:#00a000">ALIGN</span>(<span style="color:#666">4</span>K)
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>      __FUZZ_COUNTERS_END <span style="color:#666">=</span> .;
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> * Don&#39;t overwrite the SECTIONS in the default linker script. Instead insert the
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> * above into the default script
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"> */</span>
+</span></span><span style="display:flex;"><span>INSERT AFTER .data;
+</span></span></code></pre></div><p>And that&rsquo;s that - Save the linker script as fork_fuzz.ld. And build your
+libfuzzer-backed fork-server fuzzer with:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ clang-11 fuzz.c -o fuzz -fsanitize<span style="color:#666">=</span>fuzzer -Xlinker -T./fork_fuzz.ld -fsanitize<span style="color:#666">=</span>fuzzer
+</span></span></code></pre></div><p>This also works with clang-coverage:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ clang-11 fuzz.c -o fuzz -fsanitize<span style="color:#666">=</span>fuzzer -Xlinker -T./fork_fuzz.ld <span style="color:#b62;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#b62;font-weight:bold"></span>      -fsanitize<span style="color:#666">=</span>fuzzer -fprofile-instr-generate -fcoverage-mapping
+</span></span><span style="display:flex;"><span>$ ./fuzz -runs<span style="color:#666">=</span><span style="color:#666">100000</span>
+</span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"># Create an HTML coverage report in /tmp/html</span>
+</span></span><span style="display:flex;"><span>$ llvm-profdata merge -output<span style="color:#666">=</span>default.profdata default.profraw
+</span></span><span style="display:flex;"><span>$ llvm-cov show ./fuzz -instr-profile<span style="color:#666">=</span>default.profdata --format html -output-dir<span style="color:#666">=</span>/tmp/html/
+</span></span></code></pre></div><p>This is a pretty hacky solution, but I have used it successfully with
+AddressSanitizer and libfuzzer flags such as <code>-workers</code> <code>-jobs</code> and
+<code>-use_value_profile</code>.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p><a href="https://lcamtuf.coredump.cx/afl/">https://lcamtuf.coredump.cx/afl/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://llvm.org/docs/LibFuzzer.html">https://llvm.org/docs/LibFuzzer.html</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p><a href="https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_chapter/ld_3.html">https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_chapter/ld_3.html</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </body>
+</html>
+
+

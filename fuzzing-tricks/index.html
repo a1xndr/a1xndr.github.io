@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="generator" content="Hugo 0.26" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>alxndr</title>
+        <style>
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Libertine';  
+    src: url('https://physics.bu.edu/~alxndr/fonts/LinLibertine_RBI.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
+body{
+    line-height:1.6;
+    max-width:700px;
+    padding-left:10px;
+	margin: auto;
+	font-family: 'Verdana'
+}
+h1,h2,h3,h4{
+    line-height:1;
+    font-size: 1.2em;
+    
+    
+}
+h1{
+    line-height:1;
+    font-size: 1.2em;
+    color: #535F6D;
+    text-align: left;
+}
+a {
+    color: #0089ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,137,255,.3); -webkit-transition: color .1s ease,border-color .1s ease;
+    transition: color .1s ease,border-color .1s ease;
+}
+a:hover {
+    color: #f41224 !important;
+    border-color: rgba(244,18,36,.3) !important;
+}
+a:visited{
+ 
+}
+.navcell{
+	padding-top:20px;
+    padding-right:20px;
+}
+.postdate{
+    padding-right:20px;
+}
+.postlink{
+    padding-right:20px;
+}
+.wrappedimg{
+    margin:10px;
+}
+
+.wiggly {
+    font-weight: bold;
+    display: inline-block;
+}
+
+        </style>
+    </head>
+    <body>
+        
+        <table style="margin-left:auto; margin-right:auto">
+            <tr>
+                <td class=navcell><a href=https://physics.bu.edu/~alxndr/>home</a></td>
+            </tr>
+        </table>
+        
+
+
+
+<h1>Fuzzing Tips and Tricks</h1>
+
+<p>Here are some tricks that can help with fuzzing</p>
+<h2 id="oss-fuzz-corpus-backups">OSS-Fuzz Corpus Backups</h2>
+<p>Want to test your fuzzer with the corpus collected on OSS-Fuzz?
+Use this URL scheme:</p>
+<pre tabindex="0"><code>https://storage.googleapis.com/PROJECTNAME-backup.clusterfuzz-external.appspot.com/
+corpus/libFuzzer/PROJECTNAME_TARGETNAME/public.zip
+</code></pre><p>For example, for the &ldquo;bpf-object-fuzzer&rdquo; target for the &ldquo;libbpf&rdquo; project:
+<a href="https://storage.googleapis.com/libbpf-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/libbpf_bpf-object-fuzzer/public.zip">https://storage.googleapis.com/libbpf-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/libbpf_bpf-object-fuzzer/public.zip</a></p>
+<h2 id="progressive-timeouts">Progressive Timeouts</h2>
+<p>Sometimes, our target quickly runs into slow inputs which bog down performance.
+For example, if part of the input is treated as the size of a copy operation, a
+few inputs with large copy sizes will waste most of the fuzzing time. However
+we often can&rsquo;t just set a small timeout to work around this problem, because
+some code may genuinely only be accessible after a long operation. We can allow
+the fuzzer to run for longer, but sometimes that&rsquo;s not an option. That&rsquo;s where
+progressive timeouts come to the rescue. Say we have 4 fuzzer workers. We pick
+minimum and maximum timeouts and assign each worker a timeout along this scale.
+For example if min=100ms and max=1000ms, worker 0 gets a 100ms timeout, worker
+1 gets a 400 ms timeout, worker 2 gets a 700ms timeout and worker 3 gets the
+full 1000ms. Since the corpus is shared , inputs will naturally gravitate
+towards the shorter end (e.g. fewer inputs trigger large copies), but we still
+have the ability to trigger behaviors that require a full 1000ms timeout.</p>
+<p>With libfuzzer, I use a hack based on the fact that each worker writes to a
+specially-named file</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>std<span style="color:#666">::</span>stringstream ss;                                                    
+</span></span><span style="display:flex;"><span>std<span style="color:#666">::</span>regex <span style="color:#00a000">log_regex</span>(<span style="color:#b44">&#34;fuzz-(.*).log&#34;</span>);                                   
+</span></span><span style="display:flex;"><span>std<span style="color:#666">::</span>smatch match;                                                       
+</span></span><span style="display:flex;"><span>std<span style="color:#666">::</span>string s <span style="color:#666">=</span> linkpath;                                                
+</span></span><span style="display:flex;"><span>std<span style="color:#666">::</span><span style="color:#00a000">regex_search</span>(s, match, log_regex);                                  
+</span></span><span style="display:flex;"><span><span style="color:#00a000">assert</span>(match.<span style="color:#00a000">size</span>() <span style="color:#666">&gt;</span> <span style="color:#666">1</span>);
+</span></span><span style="display:flex;"><span>ss <span style="color:#666">&lt;&lt;</span> std<span style="color:#666">::</span>dec <span style="color:#666">&lt;&lt;</span> match[<span style="color:#666">1</span>].<span style="color:#00a000">str</span>();                                        
+</span></span><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">int</span> val; 
+</span></span><span style="display:flex;"><span>ss <span style="color:#666">&gt;&gt;</span> val;
+</span></span><span style="display:flex;"><span><span style="color:#0b0;font-weight:bold">unsigned</span> <span style="color:#0b0;font-weight:bold">long</span> max <span style="color:#666">=</span> <span style="color:#00a000">strtol</span>(<span style="color:#00a000">getenv</span>(<span style="color:#b44">&#34;NSLOTS&#34;</span>), <span style="color:#a2f">NULL</span>, <span style="color:#666">10</span>); <span style="color:#080;font-style:italic">// make sure to set NSLOTS
+</span></span></span><span style="display:flex;"><span><span style="color:#080;font-style:italic"></span><span style="color:#00a000">assert</span>(val <span style="color:#666">&lt;</span> max);
+</span></span><span style="display:flex;"><span><span style="color:#a2f;font-weight:bold">if</span>(max <span style="color:#666">!=</span> LONG_MIN){
+</span></span><span style="display:flex;"><span>    icount_limit <span style="color:#666">=</span> icount_limit_floor <span style="color:#666">+</span> ((icount_limit<span style="color:#666">-</span>icount_limit_floor)<span style="color:#666">/</span>(max))<span style="color:#666">*</span>(val<span style="color:#666">-</span><span style="color:#666">1</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="heading"></h2>
+
+    </body>
+</html>
+
+
